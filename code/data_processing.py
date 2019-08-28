@@ -22,8 +22,7 @@ import pickle
 import logging
 import unicodedata
 import numpy as np
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
+from gensim.models import FastText, Word2Vec
 
 
 spacy_nlp = spacy.load("en_core_web_sm")
@@ -41,26 +40,22 @@ def unicode_to_ascii(sentence):
 
 def preprocess_sentence(sentence, sentence_tags=False):
     """
-    Cleans a text by remove punctuation keeping ",.!?()", words, and digits.
+    Cleans a text by removing some punctuation keeping ",.!?()", words, and digits.
+    NOTE: punctuation can be relevant to some tasks (Named Entity Recognition).
+    Modify this function that suits your needs.
 
     :param sentence: str - a sentence
     :param sentence_tags: adds <start> and <end> tags to define sentence boundaries
     :return: sentence - clean sentence
     """
     sentence = unicode_to_ascii(sentence.lower().strip())
-    # creating a space between a word and the punctuation following it
-    # eg: "he is a boy." => "he is a boy ."
-    # Reference:
-    # https://stackoverflow.com/questions/3645931/python-padding-punctuation-with-white-spaces-keeping-punctuation
+
     sentence = re.sub(r"([?.!,\(\)])", r" \1 ", sentence)
     sentence = re.sub(r'[" "]+', " ", sentence)
 
-    # replacing everything with space except (a-z, A-Z, ".", "?", "!", ",", "(", ")")
     sentence = re.sub(r"[^a-zA-Z0-9?.!,\(\)]+", " ", sentence)
     sentence = sentence.rstrip().strip()
 
-    # adding a start and an end token to the sentence
-    # so that the model know when to start and stop predicting.
     if sentence_tags:
         sentence = '<start> ' + sentence + ' <end>'
 
@@ -73,38 +68,41 @@ def process_document(document_text):
     :param document_text: string
     :return: sentence_list
     """
-    sentence_list = []
-
     doc = spacy_nlp(document_text)
 
     for sent in doc.sents:
         clean_sentence = preprocess_sentence(sent.text)
-        sentence_list.append(clean_sentence)
-
-    return sentence_list
+        yield clean_sentence
 
 
-def get_tokenizer(data_path, tokenizer_path):
+def get_pos_sentences(document_text):
     """
-
-    :param data_path:
-    :return:
+    Splits a wiki article into sentences and cleans each sentence.
+    :param document_text: string
+    :return: sentence_list
     """
+    doc = spacy_nlp(document_text)
 
-    if os.path.exists(tokenizer_path):
-        with open(tokenizer_path, 'rb') as file_reader:
-            tokenizer = pickle.load(file_reader)
+    for sent in doc.sents:
+        yield [word.pos_ for word in sent]
+
+
+def get_word_embedding_model(word_embedding_path):
+    """
+    Loads a word embedding model. Chooses a correct algorithm based on the file name:
+    "*word2vec.model" vs "*fasttext.model",
+
+    NOTE: The model can be trained with the auxiliary script "train_word_embedding.py".
+
+    :param word_embedding_path: str - path to a trained model
+    :return: obj - word embedding model
+    """
+    if "fasttext.model" in word_embedding_path:
+        w2v_model = FastText.load(word_embedding_path)
     else:
-        logging.info("Training a tokenizer on the data")
-        data_generator = get_text_generator(data_path)
-        tokenizer = Tokenizer(filters="", oov_token="<oov>")
-        tokenizer.fit_on_texts(data_generator)
+        w2v_model = Word2Vec.load(word_embedding_path)
 
-        logging.info("Saving the tokenizer to: %s", tokenizer_path)
-        with open(tokenizer_path, "wb") as file_writer:
-            pickle.dump(tokenizer, file_writer, protocol=pickle.HIGHEST_PROTOCOL)
-
-    return tokenizer
+    return w2v_model
 
 
 def get_text_generator(data_path):
@@ -125,10 +123,11 @@ def get_text_generator(data_path):
                 wiki_text = json.loads(line)["text"]
 
                 for sent in process_document(wiki_text):
-                    yield sent
+                    logging.debug("From get_text_generator: %s", sent)
+                    yield sent.split(" ")
 
 
-def get_word_sequences_generator(data_path):
+def get_word_sequence_generator(data_path):
     """
     Returns word lists - splits the words.
     Wrapper for "get_text_generator".
@@ -137,31 +136,47 @@ def get_word_sequences_generator(data_path):
     :return: lists of words
     """
     for sent in get_text_generator(data_path):
-        yield sent.split(" ")
+        logging.debug("From get_word_sequence_generator: %s", sent)
+        yield sent
 
 
-def get_sequence_generator(data_path, tokenizer, batch_size=64, sequence_len=64):
+def pad_sequence(sequence_list, length_limit):
+    """
+    Padding a sequence (a text in w2v representation of any length) with zero vectors.
+    This make the input to have the same length (different document length is standardized).
+
+    :param sequence_list: - np array of np arrays
+    :param length_limit: int - max length of a sequence
+    :return sequence_list - padded sequences to the same length
+    """
+    n_dim = len(sequence_list.shape)
+    logging.debug("Sentence dimension: %s", sequence_list.shape)
+
+    if sequence_list.shape[0] > length_limit:
+        sequence_list = sequence_list[:length_limit]
+    elif sequence_list.shape[0] < length_limit:
+        pad = length_limit - sequence_list.shape[0]
+        if n_dim == 2:
+            sequence_list = np.pad(sequence_list, [(pad, 0), (0, 0)], "constant")
+        else:
+            sequence_list = np.pad(sequence_list, [(pad), (0)], "constant")
+
+    return np.asarray(sequence_list)
+
+
+def get_sequence_generator(data_path, w2v_model, sequence_len=64):
     """
     Wrapper for "get_text_generator" that adds work to int mapping.
 
     :param data_path: str - path to wiki corpus
-    :param tokenizer: obj - trained tokenizer
+    :param w2v_model: obj - trained word embedding model
     :param sequence_len: int - max sequence length
     :return: generator obj - sequences of word integers
     """
-    data_matrix = []
-    for sent in pad_sequences(
-            tokenizer.texts_to_sequences(
-                get_text_generator(data_path)), maxlen=sequence_len, padding="pre"):
-        yield sent
 
-        # data_matrix.append((sent, sent))
-        # if len(data_matrix) == batch_size:
-        #     batch = np.asarray(data_matrix)
-        #     data_matrix = []
-        #
-        #     yield batch
-
+    for sent in get_text_generator(data_path):
+        yield pad_sequence(np.asarray([w2v_model[w] for w in sent if w in w2v_model]),
+                           length_limit=sequence_len)
 
 
 def main(data_path):
