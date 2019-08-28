@@ -18,7 +18,6 @@ import re
 import sys
 import json
 import spacy
-import pickle
 import logging
 import unicodedata
 import numpy as np
@@ -177,6 +176,18 @@ def get_sequence_generator(data_path, w2v_model, sequence_len=64):
     for sent in get_text_generator(data_path):
         yield pad_sequence(np.asarray([w2v_model[w] for w in sent if w in w2v_model]),
                            length_limit=sequence_len)
+
+
+def vector_sequence_to_words(sequence, w2v_model):
+    """
+    Reconstructs a sentence from an array of word vectors.
+
+    :param sequence: np array of word vectors (matrix)
+    :param w2v_model: word embedding model
+    :return: str
+    """
+
+    return " ".join([w2v_model.most_similar(positive=[vect], topn=1)[0][0] for vect in sequence])
 
 
 def main(data_path):

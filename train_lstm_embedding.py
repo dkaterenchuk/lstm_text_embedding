@@ -22,6 +22,7 @@ import logging
 import numpy as np
 from code import data_processing
 from code import lstm_embedding_model
+from keras.models import load_model
 from definitions import FASTTEXT_PATH, WORD2VEC_PATH
 
 logging.basicConfig(level=logging.DEBUG)
@@ -50,24 +51,23 @@ def main(data_path, model_path):
     lstm_autoencoder, lstm_encoder, lstm_decoder = lstm_embedding_model.get_models(
         data_sample=sample_sentence, lstm_embedding_dim=sentence_embedding_dim)
 
-
-    temp_X_data = []
-
+    # TODO: make it work with generators.
+    temp_x_data = []
     for i, sent in enumerate(sequence_data_generator):
-        temp_X_data.append(sent)
-        if i == 999:
+        temp_x_data.append(sent)
+        if i == 99:
             break
 
     logging.info("Training the model.")
-    lstm_embedding_model.train_model(lstm_autoencoder, np.asarray(temp_X_data))
+    autoencoder = lstm_embedding_model.train_model(lstm_autoencoder,
+                                                   np.asarray(temp_x_data),
+                                                   batch_size=64,
+                                                   epochs=10,
+                                                   verbose=True)
 
     logging.info("Testing embedding.")
-    # for vect in sample_sentence:
-    #     print(vect)
-    #     word = w2v_model.most_similar(positive=[vect], topn=1)
-    #     print(word)
-
-    original_sent = " " .join([w2v_model.most_similar(positive=[vect], topn=1)[0][0] for vect in sample_sentence])
+    original_sent = " " .join([w2v_model.most_similar(positive=[vect], topn=1)[0][0]
+                               for vect in sample_sentence])
     logging.info("Initial sentence: %s", original_sent)
 
     logging.info("Original sentence dimensions are: %s", str(sample_sentence.shape))
@@ -76,12 +76,22 @@ def main(data_path, model_path):
 
     decoded_sent = lstm_decoder.predict(encoded_sent)
     logging.info("Reconstructed sentence: %s",
-                 " ".join([w2v_model.most_similar(positive=[vect], topn=1)[0][0] for vect in decoded_sent[0]]))
+                 data_processing.vector_sequence_to_words(decoded_sent[0], w2v_model))
 
 
     logging.info("Saving trained model to: %s", model_path)
+    lstm_autoencoder.save(model_path)
 
     logging.info("Loading the model to test embeddings.")
+    loaded_lstm_autoencoder_model = load_model(model_path)
+    print(loaded_lstm_autoencoder_model.summary())
+
+    encoder, decoder = lstm_embedding_model.split_autoencoder(autoencoder)
+    test_encoded = encoder.predict(np.asarray([sample_sentence]))
+    logging.debug("Encoded sentence shape: %s", str(test_encoded.shape))
+    logging.debug("Decoder input shape: %s", str(decoder.layers[0].input_shape))
+    test_decoded = decoder.predict(test_encoded)
+    print(data_processing.vector_sequence_to_words(test_decoded[0], w2v_model))
 
 
 if __name__ == "__main__":
