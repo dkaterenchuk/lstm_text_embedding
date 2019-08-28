@@ -6,7 +6,7 @@ Defines an LSTM model for training sentence autoencoder and encoder
 import os
 import logging
 from keras.layers.recurrent import LSTM
-from keras.models import Model, Sequential
+from keras.models import Model
 from keras.layers import RepeatVector, Bidirectional, TimeDistributed, Dense, Input
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
@@ -18,7 +18,6 @@ def get_models(data_sample, lstm_embedding_dim=256):
 
     :return: lstm_autoencoder, lstm_encoder
     """
-    print(data_sample.shape)
     sequence_length, word_embedding_dim = data_sample.shape
 
     # encoder
@@ -32,22 +31,9 @@ def get_models(data_sample, lstm_embedding_dim=256):
 
     # model
     lstm_autoencoder = Model(input_layer, dense_layer)
-
-    lstm_encoder = Model(input_layer, lstm_encoder_layer)
-
-    print(lstm_autoencoder.layers[1].output_shape)
-    # decoder_input = Input(shape=(lstm_embedding_dim,))
-    decoder_input = Input(shape=(lstm_autoencoder.layers[-4].output_shape[0],))
-    decoder_layer = lstm_autoencoder.layers[-3](decoder_input)
-    decoder_layer = lstm_autoencoder.layers[-2](decoder_layer)
-    decoder_layer = lstm_autoencoder.layers[-1](decoder_layer)
-    lstm_decoder = Model(decoder_input, decoder_layer)
-
     lstm_autoencoder.compile(optimizer='adam', loss='mse')
 
-    print(lstm_autoencoder.summary())
-
-    return lstm_autoencoder, lstm_encoder, lstm_decoder
+    return lstm_autoencoder
 
 
 def split_autoencoder(autoencoder):
