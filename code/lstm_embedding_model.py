@@ -12,7 +12,7 @@ from keras.layers import RepeatVector, Bidirectional, TimeDistributed, Dense, In
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 
-def get_models(data_sample, lstm_embedding_dim=256):
+def get_autoencoder_model(data_sample, lstm_embedding_dim=256):
     """
     Defines model architecture and hyper-parameters.
 
@@ -43,7 +43,6 @@ def split_autoencoder(autoencoder):
     :return: encoder model
     :return: decoder model
     """
-    print(autoencoder.layers[0].input_shape)
     encoder_input = Input(shape=(autoencoder.layers[0].input_shape[1:]))
     encoder_layer = autoencoder.layers[1](encoder_input)
     encoder_model = Model(encoder_input, encoder_layer)
@@ -65,12 +64,30 @@ def train_model(lstm_autoencoder, sequence_generator, batch_size=16, epochs=100,
     :param sequence_generator: data generator
     :return: trained models
     """
-    print(sequence_generator.shape)
     lstm_autoencoder.fit(sequence_generator, sequence_generator,
                          batch_size=batch_size,
                          epochs=epochs,
                          verbose=verbose)
 
-    #lstm_autoencoder.fit_generator(sequence_generator, steps_per_epoch=8, epochs=1, workers=4, use_multiprocessing=True)
+    return lstm_autoencoder
+
+
+def train_model_on_generator(lstm_autoencoder, data_generator, steps_per_epoch,
+                             epochs=100, use_multiprocessing=True, verbose=True):
+    """
+
+    :param lstm_autoencoder: obj - encoder model defined in get_autoencoder_model
+    :param data_generator: generator - dataset
+    :param steps_per_epoch: int - number of steps
+    :param epochs: int - number of epochs
+    :param verbose: bool - verbose or not
+    :return: lstm_autoencoder - trained model
+    """
+    lstm_autoencoder.fit_generator(data_generator,
+                                   steps_per_epoch=steps_per_epoch,
+                                   epochs=epochs,
+                                   workers=-1,
+                                   use_multiprocessing=use_multiprocessing,
+                                   verbose=verbose)
 
     return lstm_autoencoder

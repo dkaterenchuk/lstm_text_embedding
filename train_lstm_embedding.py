@@ -25,7 +25,7 @@ from code import lstm_embedding_model
 from keras.models import load_model
 from definitions import FASTTEXT_PATH, WORD2VEC_PATH
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 
 def main(data_path, model_path):
@@ -38,7 +38,8 @@ def main(data_path, model_path):
     """
 
     # Defining hyper-parameters
-    batch_size = 64
+    batch_size = 128
+    steps_per_epoch = 1000  # how many steps of batch_size to make during training
     epochs = 10
     verbose = True
     sequence_length = 64
@@ -52,22 +53,29 @@ def main(data_path, model_path):
 
     logging.info("Intitializing LSTM model")
     sample_sentence = next(sequence_data_generator)  # used for model initialization
-    lstm_autoencoder = lstm_embedding_model.get_models(data_sample=sample_sentence,
-                                                       lstm_embedding_dim=sentence_embedding_dim)
-
-    # TODO: make it work with generators.
-    temp_x_data = []
-    for i, sent in enumerate(sequence_data_generator):
-        temp_x_data.append(sent)
-        if i == 99:
-            break
+    lstm_autoencoder = lstm_embedding_model.get_autoencoder_model(data_sample=sample_sentence,
+                                                                  lstm_embedding_dim=sentence_embedding_dim)
 
     logging.info("Training the model.")
-    lstm_autoencoder = lstm_embedding_model.train_model(lstm_autoencoder,
-                                                        np.asarray(temp_x_data),
-                                                        batch_size=batch_size,
-                                                        epochs=epochs,
-                                                        verbose=verbose)
+    # NOTE: # Train with in-memory data if possible.
+    # If the dataset can fit into RAM, load it first and then do the training.
+    # limit = 1000
+    # temp_x_data = np.asarray([sent for i, sent in enumerate(sequence_data_generator) if i == limit])
+    # lstm_autoencoder = lstm_embedding_model.train_model(lstm_autoencoder, temp_x_data,
+    #                                                     batch_size=batch_size,
+    #                                                     epochs=epochs,
+    #                                                     verbose=verbose)
+
+    # Train with data generator (when the data does not fit into memory)
+    data_generator = data_processing.get_autoencoder_sequence_generator(data_path, w2v_model,
+                                                                        batch_size=batch_size,
+                                                                        sequence_len=sequence_length)
+
+    lstm_autoencoder = lstm_embedding_model.train_model_on_generator(lstm_autoencoder,
+                                                                     data_generator,
+                                                                     steps_per_epoch=steps_per_epoch,
+                                                                     epochs=epochs,
+                                                                     verbose=verbose)
 
     # Splitting autoencoder into encoder and decoder parts
     encoder, decoder = lstm_embedding_model.split_autoencoder(lstm_autoencoder)

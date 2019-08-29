@@ -178,6 +178,29 @@ def get_sequence_generator(data_path, w2v_model, sequence_len=64):
                            length_limit=sequence_len)
 
 
+def get_autoencoder_sequence_generator(data_path, w2v_model, batch_size=16, sequence_len=64):
+    """
+    A wrapper for "get_sequence_generator" to put the data into required format.
+
+    Note: in Keras a generator must be infinitely iterable.
+
+    :param data_path: str - path to wiki corpus
+    :param w2v_model: obj - trained word embedding model
+    :param batch_size: int - batch size
+    :param sequence_len: int - max sequence length
+    :return: generator obj - a pair of sequences of word integers
+    """
+    batch = []
+    while True:
+        for sent in get_sequence_generator(data_path, w2v_model, sequence_len):
+            sentence_vect = sent
+            batch.append(sentence_vect)
+            if len(batch) == batch_size:
+                complete_batch = np.asarray(batch)
+                batch = []
+                yield complete_batch, complete_batch
+
+
 def vector_sequence_to_words(sequence, w2v_model):
     """
     Reconstructs a sentence from an array of word vectors.
