@@ -21,7 +21,7 @@ import spacy
 import logging
 import unicodedata
 import numpy as np
-from gensim.models import FastText, Word2Vec
+from gensim.models import FastText, Word2Vec, KeyedVectors
 
 
 spacy_nlp = spacy.load("en_core_web_sm")
@@ -98,9 +98,11 @@ def get_word_embedding_model(word_embedding_path):
     """
     if "fasttext.model" in word_embedding_path:
         w2v_model = FastText.load(word_embedding_path)
-    else:
+    elif "word2vec.model" in word_embedding_path:
         w2v_model = Word2Vec.load(word_embedding_path)
-
+    else:
+        w2v_model = KeyedVectors.load_word2vec_format(word_embedding_path)
+        
     return w2v_model
 
 
@@ -194,7 +196,8 @@ def get_autoencoder_sequence_generator(data_path, w2v_model, batch_size=16, sequ
     while True:
         for sent in get_sequence_generator(data_path, w2v_model, sequence_len):
             sentence_vect = sent
-            batch.append(sentence_vect)
+            if sentence_vect:
+                batch.append(sentence_vect)
             if len(batch) == batch_size:
                 complete_batch = np.asarray(batch)
                 batch = []

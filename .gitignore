@@ -106,3 +106,4 @@ venv.bak/
 # Emacs
 *~site/
 *.model
+definitions.py

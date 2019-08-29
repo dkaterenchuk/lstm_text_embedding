@@ -25,10 +25,23 @@ from code import lstm_embedding_model
 from keras.models import load_model
 from definitions import FASTTEXT_PATH, WORD2VEC_PATH
 
+import tensorflow as tf
+import keras.backend as K
+
+
+import os
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
+
+config = tf.ConfigProto(allow_soft_placement=True)
+#config.gpu_options.per_process_gpu_memory_fraction = 0.5
+config.gpu_options.allow_growth = True
+sess = tf.Session(config=config)
+K.set_session(sess)
+
 logging.basicConfig(level=logging.INFO)
 
 
-def main(data_path, model_path):
+def main(data_path, model_path, word_embedding_path=None):
     """
     Main driver function.
 
@@ -38,8 +51,8 @@ def main(data_path, model_path):
     """
 
     # Defining hyper-parameters
-    batch_size = 128
-    steps_per_epoch = 1000  # how many steps of batch_size to make during training
+    batch_size = 512
+    steps_per_epoch = 100000  # how many steps of batch_size to make during training
     epochs = 10
     verbose = True
     sequence_length = 64
@@ -47,7 +60,10 @@ def main(data_path, model_path):
 
     # Steps to train an LSTM model
     logging.info("Preparing data generator.")
-    w2v_model = data_processing.get_word_embedding_model(FASTTEXT_PATH)
+    if word_embedding_path == None:
+        word_embedding_path = FASTTEXT_PATH
+        
+    w2v_model = data_processing.get_word_embedding_model(word_embedding_path)
     sequence_data_generator = data_processing.get_sequence_generator(data_path, w2v_model,
                                                                      sequence_len=sequence_length)
 
@@ -101,7 +117,10 @@ def main(data_path, model_path):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) < 3:
         print(__doc__)
-    else:
+    elif len(sys.argv) == 3:
         main(sys.argv[1], sys.argv[2])
+    else:
+        main(sys.argv[1], sys.argv[2], sys.argv[3])
+
