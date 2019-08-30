@@ -25,13 +25,14 @@ It needs to be modified to fit the local system organizations.
 To train word embedding on your dataset run the following command:
 
 ```bash
-python train_word_embedding.py <data_path> <output_model>
+python train_word_embedding.py <data_path> <output_model> [word_embedding_path]
 ```
 
 Args:
 
     data_path - path to wiki data
     output_model - path to save trained model
+    word_embedding_path - path to pretrained word embedding
     
     
 ### LSTM training:

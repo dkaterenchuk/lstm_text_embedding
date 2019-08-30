@@ -57,14 +57,14 @@ def split_autoencoder(autoencoder):
     return encoder_model, decoder_model
 
 
-def train_model(lstm_autoencoder, sequence_generator, batch_size=16, epochs=100, verbose=True):
+def train_model(lstm_autoencoder, data, batch_size=16, epochs=100, verbose=True):
     """
 
     :param lstm_autoencoder: keras model
     :param sequence_generator: data generator
     :return: trained models
     """
-    lstm_autoencoder.fit(sequence_generator, sequence_generator,
+    lstm_autoencoder.fit(data, data,
                          batch_size=batch_size,
                          epochs=epochs,
                          verbose=verbose)
@@ -80,14 +80,22 @@ def train_model_on_generator(lstm_autoencoder, data_generator, steps_per_epoch,
     :param data_generator: generator - dataset
     :param steps_per_epoch: int - number of steps
     :param epochs: int - number of epochs
+    :param use_multiprocessing: bool - use multiprocessing
     :param verbose: bool - verbose or not
     :return: lstm_autoencoder - trained model
     """
     lstm_autoencoder.fit_generator(data_generator,
-                                   steps_per_epoch=steps_per_epoch,
-                                   epochs=epochs,
+                                   steps_per_epoch=2,
+                                   epochs=2,
                                    workers=-1,
-                                   use_multiprocessing=use_multiprocessing,
-                                   verbose=verbose)
+                                   use_multiprocessing=True,
+                                   verbose=True)
+
+    # lstm_autoencoder.fit_generator(data_generator,
+    #                                steps_per_epoch=steps_per_epoch,
+    #                                epochs=epochs,
+    #                                workers=-1,
+    #                                use_multiprocessing=use_multiprocessing,
+    #                                verbose=verbose)
 
     return lstm_autoencoder
