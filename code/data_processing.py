@@ -174,10 +174,10 @@ def get_sequence_generator(data_path, w2v_model, sequence_len=64):
     :param sequence_len: int - max sequence length
     :return: generator obj - sequences of word integers
     """
-    while True:
-        for sent in get_text_generator(data_path):
-            yield pad_sequence(np.asarray([w2v_model[w] for w in sent if w in w2v_model]),
-                               length_limit=sequence_len)
+
+    for sent in get_text_generator(data_path):
+        yield pad_sequence(np.asarray([w2v_model[w] for w in sent if w in w2v_model]),
+                           length_limit=sequence_len)
 
 
 def get_autoencoder_sequence_generator(data_path, w2v_model, batch_size=16, sequence_len=64):
@@ -193,15 +193,15 @@ def get_autoencoder_sequence_generator(data_path, w2v_model, batch_size=16, sequ
     :return: generator obj - a pair of sequences of word integers
     """
     batch = []
-
-    for sent in get_sequence_generator(data_path, w2v_model, sequence_len):
-        sentence_vect = sent
-        # if len(sentence_vect) != 0:
-        #     batch.append(sentence_vect)
-        if len(batch) == batch_size:
-            complete_batch = np.asarray(batch)
-            batch = []
-            yield complete_batch, complete_batch
+    while True:
+        for sent in get_sequence_generator(data_path, w2v_model, sequence_len):
+            sentence_vect = sent
+            if sentence_vect:
+                batch.append(sentence_vect)
+            if len(batch) == batch_size:
+                complete_batch = np.asarray(batch)
+                batch = []
+                yield complete_batch, complete_batch
 
 
 def vector_sequence_to_words(sequence, w2v_model):
