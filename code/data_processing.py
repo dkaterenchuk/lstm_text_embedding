@@ -21,7 +21,7 @@ import spacy
 import logging
 import unicodedata
 import numpy as np
-from gensim.models import FastText, Word2Vec, KeyedVectors
+from gensim.models import FastText, Word2Vec
 
 
 spacy_nlp = spacy.load("en_core_web_sm")
@@ -98,11 +98,9 @@ def get_word_embedding_model(word_embedding_path):
     """
     if "fasttext.model" in word_embedding_path:
         w2v_model = FastText.load(word_embedding_path)
-    elif "word2vec.model" in word_embedding_path:
-        w2v_model = Word2Vec.load(word_embedding_path)
     else:
-        w2v_model = KeyedVectors.load_word2vec_format(word_embedding_path)
-        
+        w2v_model = Word2Vec.load(word_embedding_path)
+
     return w2v_model
 
 
@@ -178,30 +176,6 @@ def get_sequence_generator(data_path, w2v_model, sequence_len=64):
     for sent in get_text_generator(data_path):
         yield pad_sequence(np.asarray([w2v_model[w] for w in sent if w in w2v_model]),
                            length_limit=sequence_len)
-
-
-def get_autoencoder_sequence_generator(data_path, w2v_model, batch_size=16, sequence_len=64):
-    """
-    A wrapper for "get_sequence_generator" to put the data into required format.
-
-    Note: in Keras a generator must be infinitely iterable.
-
-    :param data_path: str - path to wiki corpus
-    :param w2v_model: obj - trained word embedding model
-    :param batch_size: int - batch size
-    :param sequence_len: int - max sequence length
-    :return: generator obj - a pair of sequences of word integers
-    """
-    batch = []
-    while True:
-        for sent in get_sequence_generator(data_path, w2v_model, sequence_len):
-            sentence_vect = sent
-            if sentence_vect:
-                batch.append(sentence_vect)
-            if len(batch) == batch_size:
-                complete_batch = np.asarray(batch)
-                batch = []
-                yield complete_batch, complete_batch
 
 
 def vector_sequence_to_words(sequence, w2v_model):

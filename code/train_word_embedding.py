@@ -18,13 +18,12 @@ from gensim.models.word2vec import Word2Vec
 from gensim.models import FastText
 
 
-def main(data_path, output_path, training_algorithm="fasttext"):
+def main(data_path, output_path, training_algorithm="word2vec"):
     """
     Main function to execute the training.
 
     :param data_path: str - path to the data
     :param output_path: str - output path
-    :param training_algorithm: str - fasttext or word2vec (default) training algorithm
     :return: None
     """
     logging.info("Crating data generator.")

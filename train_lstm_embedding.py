@@ -25,23 +25,10 @@ from code import lstm_embedding_model
 from keras.models import load_model
 from definitions import FASTTEXT_PATH, WORD2VEC_PATH
 
-import tensorflow as tf
-import keras.backend as K
+logging.basicConfig(level=logging.DEBUG)
 
 
-import os
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
-
-config = tf.ConfigProto(allow_soft_placement=True)
-#config.gpu_options.per_process_gpu_memory_fraction = 0.5
-config.gpu_options.allow_growth = True
-sess = tf.Session(config=config)
-K.set_session(sess)
-
-logging.basicConfig(level=logging.INFO)
-
-
-def main(data_path, model_path, word_embedding_path=None):
+def main(data_path, model_path):
     """
     Main driver function.
 
@@ -51,8 +38,7 @@ def main(data_path, model_path, word_embedding_path=None):
     """
 
     # Defining hyper-parameters
-    batch_size = 512
-    steps_per_epoch = 100000  # how many steps of batch_size to make during training
+    batch_size = 64
     epochs = 10
     verbose = True
     sequence_length = 64
@@ -60,38 +46,28 @@ def main(data_path, model_path, word_embedding_path=None):
 
     # Steps to train an LSTM model
     logging.info("Preparing data generator.")
-    if word_embedding_path == None:
-        word_embedding_path = FASTTEXT_PATH
-        
-    w2v_model = data_processing.get_word_embedding_model(word_embedding_path)
+    w2v_model = data_processing.get_word_embedding_model(FASTTEXT_PATH)
     sequence_data_generator = data_processing.get_sequence_generator(data_path, w2v_model,
                                                                      sequence_len=sequence_length)
 
     logging.info("Intitializing LSTM model")
     sample_sentence = next(sequence_data_generator)  # used for model initialization
-    lstm_autoencoder = lstm_embedding_model.get_autoencoder_model(data_sample=sample_sentence,
-                                                                  lstm_embedding_dim=sentence_embedding_dim)
+    lstm_autoencoder = lstm_embedding_model.get_models(data_sample=sample_sentence,
+                                                       lstm_embedding_dim=sentence_embedding_dim)
+
+    # TODO: make it work with generators.
+    temp_x_data = []
+    for i, sent in enumerate(sequence_data_generator):
+        temp_x_data.append(sent)
+        if i == 99:
+            break
 
     logging.info("Training the model.")
-    # NOTE: # Train with in-memory data if possible.
-    # If the dataset can fit into RAM, load it first and then do the training.
-    # limit = 1000
-    # temp_x_data = np.asarray([sent for i, sent in enumerate(sequence_data_generator) if i == limit])
-    # lstm_autoencoder = lstm_embedding_model.train_model(lstm_autoencoder, temp_x_data,
-    #                                                     batch_size=batch_size,
-    #                                                     epochs=epochs,
-    #                                                     verbose=verbose)
-
-    # Train with data generator (when the data does not fit into memory)
-    data_generator = data_processing.get_autoencoder_sequence_generator(data_path, w2v_model,
-                                                                        batch_size=batch_size,
-                                                                        sequence_len=sequence_length)
-
-    lstm_autoencoder = lstm_embedding_model.train_model_on_generator(lstm_autoencoder,
-                                                                     data_generator,
-                                                                     steps_per_epoch=steps_per_epoch,
-                                                                     epochs=epochs,
-                                                                     verbose=verbose)
+    lstm_autoencoder = lstm_embedding_model.train_model(lstm_autoencoder,
+                                                        np.asarray(temp_x_data),
+                                                        batch_size=batch_size,
+                                                        epochs=epochs,
+                                                        verbose=verbose)
 
     # Splitting autoencoder into encoder and decoder parts
     encoder, decoder = lstm_embedding_model.split_autoencoder(lstm_autoencoder)
@@ -117,10 +93,7 @@ def main(data_path, model_path, word_embedding_path=None):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
+    if len(sys.argv) != 3:
         print(__doc__)
-    elif len(sys.argv) == 3:
-        main(sys.argv[1], sys.argv[2])
     else:
-        main(sys.argv[1], sys.argv[2], sys.argv[3])
-
+        main(sys.argv[1], sys.argv[2])
