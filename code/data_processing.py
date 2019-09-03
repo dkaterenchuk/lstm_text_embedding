@@ -172,10 +172,10 @@ def get_sequence_generator(data_path, w2v_model, sequence_len=64):
     :param sequence_len: int - max sequence length
     :return: generator obj - sequences of word integers
     """
-
-    for sent in get_text_generator(data_path):
-        yield pad_sequence(np.asarray([w2v_model[w] for w in sent if w in w2v_model]),
-                           length_limit=sequence_len)
+    while True:
+        for sent in get_text_generator(data_path):
+            yield pad_sequence(np.asarray([w2v_model[w] for w in sent if w in w2v_model]),
+                               length_limit=sequence_len)
 
 
 def vector_sequence_to_words(sequence, w2v_model):
