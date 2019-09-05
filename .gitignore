@@ -107,3 +107,4 @@ venv.bak/
 *~site/
 *.model
 definitions.py
+*.hdf5

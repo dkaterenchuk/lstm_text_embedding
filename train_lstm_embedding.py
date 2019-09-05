@@ -72,15 +72,17 @@ def main(data_path, model_path):
                                                        lstm_embedding_dim=sentence_embedding_dim)
 
     logging.info("Training the model.")
-    # # Example of how to fit a small data set (loading into ram)
-    # temp_x_data = []
-    # for i, sent in enumerate(sequence_data_generator):
-    #     temp_x_data.append(sent)
-    #     if i == 99:
-    #         break
     #
+    test_data = []
+    for i, sent in enumerate(sequence_data_generator):
+        test_data.append(sent)
+        if i == 99:
+            break
+    test_data = np.asarray(test_data)
+
+    # Example of how to fit a small data set (loading into ram)
     # lstm_autoencoder = lstm_embedding_model.train_model(lstm_autoencoder,
-    #                                                     np.asarray(temp_x_data),
+    #                                                     test_data,
     #                                                     batch_size=batch_size,
     #                                                     epochs=epochs,
     #                                                     verbose=verbose)
@@ -92,6 +94,8 @@ def main(data_path, model_path):
 
     lstm_autoencoder = lstm_embedding_model.train_model_on_generator(lstm_autoencoder,
                                                                      data_generator,
+                                                                     model_path=model_path,
+                                                                     validation_data=(test_data, test_data),
                                                                      steps_per_epoch=steps_per_epoch,
                                                                      epochs=epochs,
                                                                      workers=workers,

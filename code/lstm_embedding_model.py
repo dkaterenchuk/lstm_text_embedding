@@ -8,6 +8,7 @@ import logging
 from keras.layers.recurrent import LSTM
 from keras.models import Model
 from keras.layers import RepeatVector, Bidirectional, TimeDistributed, Dense, Input
+from keras.callbacks import ModelCheckpoint
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
@@ -74,19 +75,33 @@ def train_model(lstm_autoencoder, sequence_generator, batch_size=16, epochs=100,
     return lstm_autoencoder
 
 
-def train_model_on_generator(lstm_autoencoder, sequence_generator, steps_per_epoch=10, epochs=100,
+def train_model_on_generator(lstm_autoencoder, sequence_generator, model_path, validation_data=None,
+                             steps_per_epoch=10, epochs=100,
                              workers=4, use_multiprocessing=True, verbose=True):
     """
 
-    :param lstm_autoencoder: keras model
-    :param sequence_generator: data generator
-    :return: trained models
+    :param lstm_autoencoder: lstm_model
+    :param sequence_generator: data generator object
+    :param model_path: path to safe the final model
+    :param validation_data: validation data
+    :param steps_per_epoch: steps to cover all data form the generator
+    :param epochs: epochs
+    :param workers: number of parallel jobs
+    :param use_multiprocessing: multi-core
+    :param verbose: verbose
+    :return: trained lstm_model
     """
+    filepath = model_path + "_improvement-{epoch:02d}-{val_loss:.4f}.hdf5"
+    checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=0, save_best_only=True,
+                                 save_weights_only=False, mode='auto', period=1)
+
     lstm_autoencoder.fit_generator(sequence_generator,
+                                   validation_data=validation_data,
                                    steps_per_epoch=steps_per_epoch,
                                    epochs=epochs,
                                    workers=workers,
                                    use_multiprocessing=use_multiprocessing,
-                                   verbose=verbose)
+                                   verbose=verbose,
+                                   callbacks=[checkpoint])
 
     return lstm_autoencoder
