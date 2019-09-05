@@ -28,7 +28,6 @@ from definitions import FASTTEXT_PATH, WORD2VEC_PATH
 import tensorflow as tf
 import keras.backend as K
 
-
 import os
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
