@@ -23,7 +23,7 @@ def get_models(data_sample, lstm_embedding_dim=256):
 
     # encoder
     input_layer = Input(shape=(sequence_length, word_embedding_dim))
-    lstm_encoder_layer = LSTM(lstm_embedding_dim, return_sequences=False, activation="tanh")(input_layer)
+    lstm_encoder_layer = Bidirectional(LSTM(lstm_embedding_dim, return_sequences=False, activation="tanh"))(input_layer)
 
     # decoder
     repeat_layer = RepeatVector(sequence_length)(lstm_encoder_layer)
