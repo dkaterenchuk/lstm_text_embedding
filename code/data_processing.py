@@ -176,8 +176,9 @@ def get_sequence_generator(data_path, w2v_model, sequence_length=64):
     """
     while True:
         for sent in get_text_generator(data_path):
-            yield pad_sequence(np.asarray([w2v_model[w] for w in sent if w in w2v_model]),
-                               length_limit=sequence_length)
+            sent_sequence = [w2v_model[w] for w in sent if w in w2v_model]
+            if len(sent_sequence) > 0:
+                yield pad_sequence(np.asarray(sent_sequence), length_limit=sequence_length) 
 
 
 def get_batch_sequence_generator(data_path, w2v_model, sequence_length=64, batch_size=32):

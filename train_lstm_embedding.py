@@ -50,12 +50,12 @@ def main(data_path, model_path):
     """
 
     # Defining hyper-parameters
-    epochs = 5  # how many times to go over your dataset
+    epochs = 1000  # how many times to go over your dataset
     # (batch_size * steps_per_epoch) = whole dataset for the generator
-    batch_size = 64  # batch size - in generator this is a single step
-    steps_per_epoch = 10  # number of steps defines your entire dataset in generator
+    batch_size = 1024  # batch size - in generator this is a single step
+    steps_per_epoch = 12000  # number of steps defines your entire dataset in generator
     sequence_length = 64  # length of each text - in this case a sentence
-    sentence_embedding_dim = 256  # size of the latent space
+    sentence_embedding_dim = 512  # size of the latent space
     workers = 4  # cores
     use_multiprocessing = True  # multiprocessing
     verbose = True  # verbose
