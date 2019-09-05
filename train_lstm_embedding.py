@@ -63,11 +63,19 @@ def main(data_path, model_path):
             break
 
     logging.info("Training the model.")
-    lstm_autoencoder = lstm_embedding_model.train_model(lstm_autoencoder,
-                                                        np.asarray(temp_x_data),
-                                                        batch_size=batch_size,
-                                                        epochs=epochs,
-                                                        verbose=verbose)
+    # lstm_autoencoder = lstm_embedding_model.train_model(lstm_autoencoder,
+    #                                                     np.asarray(temp_x_data),
+    #                                                     batch_size=batch_size,
+    #                                                     epochs=epochs,
+    #                                                     verbose=verbose)
+
+    # testing LSTM generator
+    data_generator = data_processing.get_batch_sequence_generator(data_path, w2v_model,
+                                                                  sequence_len=64,
+                                                                  batch_size=32)
+
+    lstm_autoencoder = lstm_embedding_model.train_model_on_generator(lstm_autoencoder,
+                                                                     data_generator)
 
     # Splitting autoencoder into encoder and decoder parts
     encoder, decoder = lstm_embedding_model.split_autoencoder(lstm_autoencoder)

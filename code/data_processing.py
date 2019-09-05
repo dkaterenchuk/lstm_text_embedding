@@ -178,6 +178,25 @@ def get_sequence_generator(data_path, w2v_model, sequence_len=64):
                                length_limit=sequence_len)
 
 
+def get_batch_sequence_generator(data_path, w2v_model, sequence_len=64, batch_size=32):
+    """
+    Wrapper for "get_sequence_generator" that adds batches of data.
+
+    :param data_path: str - path to wiki corpus
+    :param w2v_model: obj - trained word embedding model
+    :param sequence_len: int - max sequence length
+    :param batch_size: int - number of instances per batch
+    :return: generator obj - sequences of word integers
+    """
+    batch = []
+    for sent in get_sequence_generator(data_path, w2v_model, sequence_len=64):
+        batch.append(sent)
+        if len(batch) == batch_size:
+            complete_batch = np.asarray(batch)
+            batch = []
+            yield complete_batch, complete_batch
+
+
 def vector_sequence_to_words(sequence, w2v_model):
     """
     Reconstructs a sentence from an array of word vectors.

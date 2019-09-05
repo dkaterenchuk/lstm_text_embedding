@@ -9,7 +9,7 @@ from keras.layers.recurrent import LSTM
 from keras.models import Model
 from keras.layers import RepeatVector, Bidirectional, TimeDistributed, Dense, Input
 
-os.environ['KMP_DUPLICATE_LIB_OK']='True'
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 
 def get_models(data_sample, lstm_embedding_dim=256):
@@ -71,6 +71,20 @@ def train_model(lstm_autoencoder, sequence_generator, batch_size=16, epochs=100,
                          epochs=epochs,
                          verbose=verbose)
 
-    #lstm_autoencoder.fit_generator(sequence_generator, steps_per_epoch=8, epochs=1, workers=4, use_multiprocessing=True)
+    return lstm_autoencoder
+
+
+def train_model_on_generator(lstm_autoencoder, sequence_generator, batch_size=16, epochs=100, verbose=True):
+    """
+
+    :param lstm_autoencoder: keras model
+    :param sequence_generator: data generator
+    :return: trained models
+    """
+    lstm_autoencoder.fit_generator(sequence_generator,
+                                   steps_per_epoch=10,
+                                   epochs=5,
+                                   workers=4,
+                                   use_multiprocessing=True)
 
     return lstm_autoencoder
