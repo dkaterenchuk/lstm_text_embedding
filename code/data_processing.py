@@ -163,33 +163,33 @@ def pad_sequence(sequence_list, length_limit):
     return np.asarray(sequence_list)
 
 
-def get_sequence_generator(data_path, w2v_model, sequence_len=64):
+def get_sequence_generator(data_path, w2v_model, sequence_length=64):
     """
     Wrapper for "get_text_generator" that adds work to int mapping.
 
     :param data_path: str - path to wiki corpus
     :param w2v_model: obj - trained word embedding model
-    :param sequence_len: int - max sequence length
+    :param sequence_length: int - max sequence length
     :return: generator obj - sequences of word integers
     """
     while True:
         for sent in get_text_generator(data_path):
             yield pad_sequence(np.asarray([w2v_model[w] for w in sent if w in w2v_model]),
-                               length_limit=sequence_len)
+                               length_limit=sequence_length)
 
 
-def get_batch_sequence_generator(data_path, w2v_model, sequence_len=64, batch_size=32):
+def get_batch_sequence_generator(data_path, w2v_model, sequence_length=64, batch_size=32):
     """
     Wrapper for "get_sequence_generator" that adds batches of data.
 
     :param data_path: str - path to wiki corpus
     :param w2v_model: obj - trained word embedding model
-    :param sequence_len: int - max sequence length
+    :param sequence_length: int - max sequence length
     :param batch_size: int - number of instances per batch
     :return: generator obj - sequences of word integers
     """
     batch = []
-    for sent in get_sequence_generator(data_path, w2v_model, sequence_len=64):
+    for sent in get_sequence_generator(data_path, w2v_model, sequence_length=sequence_length):
         batch.append(sent)
         if len(batch) == batch_size:
             complete_batch = np.asarray(batch)

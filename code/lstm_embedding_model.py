@@ -74,7 +74,8 @@ def train_model(lstm_autoencoder, sequence_generator, batch_size=16, epochs=100,
     return lstm_autoencoder
 
 
-def train_model_on_generator(lstm_autoencoder, sequence_generator, batch_size=16, epochs=100, verbose=True):
+def train_model_on_generator(lstm_autoencoder, sequence_generator, steps_per_epoch=10, epochs=100,
+                             workers=4, use_multiprocessing=True, verbose=True):
     """
 
     :param lstm_autoencoder: keras model
@@ -82,9 +83,10 @@ def train_model_on_generator(lstm_autoencoder, sequence_generator, batch_size=16
     :return: trained models
     """
     lstm_autoencoder.fit_generator(sequence_generator,
-                                   steps_per_epoch=10,
-                                   epochs=5,
-                                   workers=4,
-                                   use_multiprocessing=True)
+                                   steps_per_epoch=steps_per_epoch,
+                                   epochs=epochs,
+                                   workers=workers,
+                                   use_multiprocessing=use_multiprocessing,
+                                   verbose=verbose)
 
     return lstm_autoencoder
