@@ -21,7 +21,7 @@ import spacy
 import logging
 import unicodedata
 import numpy as np
-from gensim.models import FastText, Word2Vec
+from gensim.models import FastText, Word2Vec, KeyedVectors
 
 
 spacy_nlp = spacy.load("en_core_web_sm")
@@ -98,6 +98,8 @@ def get_word_embedding_model(word_embedding_path):
     """
     if "fasttext.model" in word_embedding_path:
         w2v_model = FastText.load(word_embedding_path)
+    elif "wiki-news-300d-1M-subword.vec" in word_embedding_path:
+        w2v_model = KeyedVectors.load_word2vec_format(word_embedding_path)
     else:
         w2v_model = Word2Vec.load(word_embedding_path)
 
