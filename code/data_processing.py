@@ -61,7 +61,7 @@ def preprocess_sentence(sentence, sentence_tags=False):
     return sentence
 
 
-def process_document(document_text):
+def process_document(document_text, sentence_tags=False):
     """
     Splits a wiki article into sentences and cleans each sentence.
     :param document_text: string
@@ -70,7 +70,7 @@ def process_document(document_text):
     doc = spacy_nlp(document_text)
 
     for sent in doc.sents:
-        clean_sentence = preprocess_sentence(sent.text)
+        clean_sentence = preprocess_sentence(sent.text, sentence_tags=sentence_tags)
         yield clean_sentence
 
 
@@ -106,7 +106,23 @@ def get_word_embedding_model(word_embedding_path):
     return w2v_model
 
 
-def get_text_generator(data_path):
+def pad_text(word_list, pad=None):
+    """
+    Pads word list with "<pad>" tags at the beggining.
+
+    :param word_list: list - words
+    :param pad: ing - max length of a sentence
+    """
+    if len(word_list) > pad:
+        return word_list[:pad]
+    else:
+        delta = pad - len(word_list)
+        word_list = ["<pad>"] * delta + word_list
+
+        return word_list
+
+
+def get_text_generator(data_path, sentence_tags=False, pad=False):
     """
     Reads Wiki data dump, cleans the data and returns a generator of sentences
 
@@ -123,11 +139,12 @@ def get_text_generator(data_path):
             for line in wiki_doc:
                 wiki_text = json.loads(line)["text"]
 
-                for sent in process_document(wiki_text):
+                for sent in process_document(wiki_text, sentence_tags=sentence_tags):
                     logging.debug("From get_text_generator: %s", sent)
-                    yield sent.split(" ")
+                    yield pad_text(sent.split(" "), pad=pad)
 
 
+# DOTO: Depricated
 def get_word_sequence_generator(data_path):
     """
     Returns word lists - splits the words.

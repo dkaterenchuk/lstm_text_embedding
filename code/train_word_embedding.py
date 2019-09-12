@@ -18,6 +18,9 @@ from gensim.models.word2vec import Word2Vec
 from gensim.models import FastText
 
 
+logging.basicConfig(level=logging.INFO)
+
+
 def main(data_path, output_path, training_algorithm="word2vec"):
     """
     Main function to execute the training.
@@ -26,15 +29,27 @@ def main(data_path, output_path, training_algorithm="word2vec"):
     :param output_path: str - output path
     :return: None
     """
+    sentence_limit = 64
+    size=128
+    window=5
+    min_count=10
+    iterations=5
+    workers=8
+    sg=0
+    
+
+    # for sent in data_processing.get_text_generator(data_path, sentence_tags=True, pad=sentence_limit):
+    #     print( len(sent), sent)
+    
     logging.info("Crating data generator.")
-    text_data = [x for x in data_processing.get_word_sequences_generator(data_path)]
+    text_data = [x for x in data_processing.get_text_generator(data_path, sentence_tags=True, pad=sentence_limit)]
 
     logging.info("Training the model")
     if training_algorithm == "fasttext":
         logging.info("Using FastText algorithm")
-        word_embedding_model = FastText(size=128, window=5, min_count=2, iter=5, workers=4, sg=0)
+        word_embedding_model = FastText(size=size, window=window, min_count=min_count, iter=iterations, workers=workers, sg=sg)
     else:
-        word_embedding_model = Word2Vec(size=128, window=5, min_count=2, iter=5, workers=4, sg=0)
+        word_embedding_model = Word2Vec(size=size, window=window, min_count=min_count, iter=iterations, workers=workers, sg=sg)
 
     word_embedding_model.build_vocab(text_data)
     word_embedding_model.train(text_data, total_examples=word_embedding_model.corpus_count, epochs=10)
