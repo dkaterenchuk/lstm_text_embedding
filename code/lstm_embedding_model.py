@@ -59,18 +59,22 @@ def split_autoencoder(autoencoder):
     return encoder_model, decoder_model
 
 
-def train_model(lstm_autoencoder, sequence_generator, batch_size=16, epochs=100, verbose=True):
+def train_model(lstm_autoencoder, sequence_generator, model_path, batch_size=16, epochs=100, verbose=True):
     """
 
     :param lstm_autoencoder: keras model
     :param sequence_generator: data generator
     :return: trained models
     """
-    print(sequence_generator.shape)
+    filepath = model_path + "_improvement-{epoch:02d}-{val_loss:.4f}.hdf5"
+    checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=0, save_best_only=True,
+                                 save_weights_only=False, mode='auto', period=1)
+
     lstm_autoencoder.fit(sequence_generator, sequence_generator,
                          batch_size=batch_size,
                          epochs=epochs,
-                         verbose=verbose)
+                         verbose=verbose,
+                         callbacks=[checkpoint])
 
     return lstm_autoencoder
 

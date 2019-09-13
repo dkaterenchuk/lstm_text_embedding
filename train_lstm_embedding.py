@@ -23,7 +23,7 @@ import numpy as np
 from code import data_processing
 from code import lstm_embedding_model
 from keras.models import load_model
-from definitions import FASTTEXT_PATH, WORD2VEC_PATH
+from definitions import PATHS, HYPER_PARAM
 
 import tensorflow as tf
 import keras.backend as K
@@ -37,7 +37,7 @@ config.gpu_options.allow_growth = True
 sess = tf.Session(config=config)
 K.set_session(sess)
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 
 def main(data_path, model_path):
@@ -48,46 +48,42 @@ def main(data_path, model_path):
     data_path: str - path to wiki data
     model_path: str - path to save trained model
     """
-
     # Defining hyper-parameters
-    epochs = 1000  # how many times to go over your dataset
+    epochs = HYPER_PARAM["epochs"]  # how many times to go over your dataset
     # (batch_size * steps_per_epoch) = whole dataset for the generator
-    batch_size = 1024  # batch size - in generator this is a single step
-    steps_per_epoch = 12000  # number of steps defines your entire dataset in generator
-    sequence_length = 64  # length of each text - in this case a sentence
-    sentence_embedding_dim = 512  # size of the latent space
-    workers = 4  # cores
-    use_multiprocessing = True  # multiprocessing
-    verbose = True  # verbose
-
-    training_sentences = 10**6 # approximmate number of data
+    batch_size = HYPER_PARAM["batch_size"]  # batch size - in generator this is a single step
+    steps_per_epoch = HYPER_PARAM["steps_per_epoch"]  # number of steps defines your entire dataset in generator
+    sequence_length = HYPER_PARAM["sequence_length"]  # length of each text - in this case a sentence
+    sentence_embedding_dim = HYPER_PARAM["sentence_embedding_dim"]  # size of the latent space
+    workers = HYPER_PARAM["workers"]  # cores
+    use_multiprocessing = HYPER_PARAM["use_multiprocessing"]  # multiprocessing
+    verbose = HYPER_PARAM["verbose"]  # verbose
+    training_sentences = 10**6  # approximate number of data to use
     
     # Steps to train an LSTM model
-    logging.info("Preparing data generator.")
-    w2v_model = data_processing.get_word_embedding_model(FASTTEXT_PATH)
+    logging.info("Preparing data.")
+    w2v_model = data_processing.get_word_embedding_model(PATHS["fasttext"])
     sequence_data_generator = data_processing.get_sequence_generator(data_path, w2v_model,
                                                                      sequence_length=sequence_length)
 
-    logging.info("Initializing LSTM model")
-    sample_sentence = next(sequence_data_generator)  # used for model initialization
-    lstm_autoencoder = lstm_embedding_model.get_models(data_sample=sample_sentence,
-                                                       lstm_embedding_dim=sentence_embedding_dim)
-
     logging.info("Loading the data.")
-    
     train_data = []
     for i, sent in enumerate(sequence_data_generator):
         train_data.append(sent)
         if i == training_sentences:
             break
-    
-    #test_data = np.asarray(train_data[-100:])
     train_data = np.asarray(train_data)
 
+    logging.info("Compiling LSTM model.")
+    sample_sentence = next(sequence_data_generator)  # used for model initialization
+    lstm_autoencoder = lstm_embedding_model.get_models(data_sample=sample_sentence,
+                                                       lstm_embedding_dim=sentence_embedding_dim)
+
     logging.info("Training the model.")
-    # Example of how to fit a small data set (loading into ram)
+    # Example of how to fit a small data set (loading into ram and train)
     lstm_autoencoder = lstm_embedding_model.train_model(lstm_autoencoder,
                                                         train_data,
+                                                        model_path=model_path,
                                                         batch_size=batch_size,
                                                         epochs=epochs,
                                                         verbose=verbose)
@@ -96,7 +92,7 @@ def main(data_path, model_path):
     # data_generator = data_processing.get_batch_sequence_generator(data_path, w2v_model,
     #                                                               sequence_length=sequence_length,
     #                                                               batch_size=batch_size)
-
+    #
     # lstm_autoencoder = lstm_embedding_model.train_model_on_generator(lstm_autoencoder,
     #                                                                  data_generator,
     #                                                                  model_path=model_path,

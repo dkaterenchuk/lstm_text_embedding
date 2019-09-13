@@ -108,18 +108,21 @@ def get_word_embedding_model(word_embedding_path):
 
 def pad_text(word_list, pad=None):
     """
-    Pads word list with "<pad>" tags at the beggining.
+    Pads word list with "<pad>" tags at the beginning.
+    NOTE: We add at most 5 <pad>'s to save the space
 
     :param word_list: list - words
     :param pad: ing - max length of a sentence
     """
+    logging.debug("Pad text size: %s", " ".join(word_list))
+
     if len(word_list) > pad:
-        return word_list[:pad]
+        word_list = word_list[:pad]
     else:
         delta = pad - len(word_list)
-        word_list = ["<pad>"] * delta + word_list
+        word_list = ["<pad>"] * min(delta, 5) + word_list  # padding
 
-        return word_list
+    return word_list
 
 
 def get_text_generator(data_path, sentence_tags=False, pad=False):
@@ -131,31 +134,35 @@ def get_text_generator(data_path, sentence_tags=False, pad=False):
     """
     for folder in os.listdir(data_path):
         logging.debug("Data path at folder: %s", os.path.join(data_path, folder))
+        print(folder)
         for doc in os.listdir(os.path.join(data_path, folder)):
             logging.debug("A file path: %s", os.path.join(data_path, folder, doc))
+            print(doc)
             with open(os.path.join(data_path, folder, doc), "r") as f_reader:
                 wiki_doc = f_reader.readlines()
-
             for line in wiki_doc:
                 wiki_text = json.loads(line)["text"]
-
                 for sent in process_document(wiki_text, sentence_tags=sentence_tags):
                     logging.debug("From get_text_generator: %s", sent)
-                    yield pad_text(sent.split(" "), pad=pad)
+                    sent = sent.split(" ")
+                    if pad:
+                        sent = pad_text(sent, pad=pad)
+
+                    yield sent
 
 
-# DOTO: Depricated
-def get_word_sequence_generator(data_path):
-    """
-    Returns word lists - splits the words.
-    Wrapper for "get_text_generator".
-
-    :param data_path: path to the data
-    :return: lists of words
-    """
-    for sent in get_text_generator(data_path):
-        logging.debug("From get_word_sequence_generator: %s", sent)
-        yield sent
+# # TODO: remove @Deprecated
+# def get_word_sequence_generator(data_path):
+#     """
+#     Returns word lists - splits the words.
+#     Wrapper for "get_text_generator".
+#
+#     :param data_path: path to the data
+#     :return: lists of words
+#     """
+#     for sent in get_text_generator(data_path):
+#         logging.debug("From get_word_sequence_generator: %s", sent)
+#         yield sent
 
 
 def pad_sequence(sequence_list, length_limit):
@@ -195,7 +202,7 @@ def get_sequence_generator(data_path, w2v_model, sequence_length=64):
         for sent in get_text_generator(data_path):
             sent_sequence = [w2v_model[w] for w in sent if w in w2v_model]
             if len(sent_sequence) > 0:
-                yield pad_sequence(np.asarray(sent_sequence), length_limit=sequence_length) 
+                yield pad_sequence(np.asarray(sent_sequence), length_limit=sequence_length)
 
 
 def get_batch_sequence_generator(data_path, w2v_model, sequence_length=64, batch_size=32):

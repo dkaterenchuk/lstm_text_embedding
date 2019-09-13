@@ -27,21 +27,18 @@ def main(data_path, output_path, training_algorithm="word2vec"):
 
     :param data_path: str - path to the data
     :param output_path: str - output path
+    :param training_algorithm: str - training algorithm (word2vec/fastText)
     :return: None
     """
     sentence_limit = 64
-    size=128
-    window=5
-    min_count=10
-    iterations=5
-    workers=8
-    sg=0
-    
+    size = 128
+    window = 5
+    min_count = 10
+    iterations = 5
+    workers = 8
+    sg = 0
 
-    # for sent in data_processing.get_text_generator(data_path, sentence_tags=True, pad=sentence_limit):
-    #     print( len(sent), sent)
-    
-    logging.info("Crating data generator.")
+    logging.info("Loading data.")
     text_data = [x for x in data_processing.get_text_generator(data_path, sentence_tags=True, pad=sentence_limit)]
 
     logging.info("Training the model")
