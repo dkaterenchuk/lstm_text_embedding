@@ -10,7 +10,7 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 WIKI_DATA = os.path.join(ROOT, "data/wiki/")
 WORD2VEC_PATH = os.path.join(ROOT, "data/word_embeddings/wiki_dump_128dim_word2vec.model")
 FASTTEXT_PATH = os.path.join(ROOT, "data/word_embeddings/wiki_dump_128dim_fasttext.model")
-FASTTEXT_PATH = "/scratch/denys/fasttext/wiki-news-300d-1M-subword.vec"
+FASTTEXT_PATH = "fasttext/wiki-news-300d-1M-subword.vec"
 
 PATHS = {
     "root": os.path.dirname(os.path.abspath(__file__)),
