@@ -63,19 +63,28 @@ def main(data_path, model_path):
     # Steps to train an LSTM model
     logging.info("Preparing data.")
     w2v_model = data_processing.get_word_embedding_model(PATHS["fasttext"])
-    sequence_data_generator = data_processing.get_sequence_generator(data_path, w2v_model,
-                                                                     sequence_length=sequence_length)
 
-    logging.info("Loading the data.")
-    train_data = []
-    for i, sent in enumerate(sequence_data_generator):
-        train_data.append(sent)
-        if i == training_sentences:
-            break
-    train_data = np.asarray(train_data)
+    # This cleans the data on the fly. Time consuming - advised to pre-process the data before-hand.
+    # An example of pre-processing is defined in "code/wiki_preprocessing.py"
+    #
+    # sequence_data_generator = data_processing.get_sequence_generator(data_path, w2v_model,
+    #                                                                  sequence_length=sequence_length)
+    #
+    # logging.info("Loading the data.")
+    # train_data = []
+    # for i, sent in enumerate(sequence_data_generator):
+    #     train_data.append(sent)
+    #     if i == training_sentences:
+    #         break
+    # train_data = np.asarray(train_data)
+
+    train_data = data_processing.get_preprocessed_data(data_path, w2v_model, sent_length=sequence_length)
+    test_data = train_data[:100]
+    train_data = train_data[:100]
+    print(train_data.shape)
 
     logging.info("Compiling LSTM model.")
-    sample_sentence = next(sequence_data_generator)  # used for model initialization
+    sample_sentence = train_data[0]  # used for model initialization
     lstm_autoencoder = lstm_embedding_model.get_models(data_sample=sample_sentence,
                                                        lstm_embedding_dim=sentence_embedding_dim)
 
@@ -83,6 +92,7 @@ def main(data_path, model_path):
     # Example of how to fit a small data set (loading into ram and train)
     lstm_autoencoder = lstm_embedding_model.train_model(lstm_autoencoder,
                                                         train_data,
+                                                        validation_data=test_data,
                                                         model_path=model_path,
                                                         batch_size=batch_size,
                                                         epochs=epochs,

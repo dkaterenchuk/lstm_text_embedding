@@ -165,7 +165,7 @@ def get_text_generator(data_path, sentence_tags=False, pad=False):
 #         yield sent
 
 
-def pad_sequence(sequence_list, length_limit):
+def pad_sequence_with_zeros(sequence_list, length_limit):
     """
     Padding a sequence (a text in w2v representation of any length) with zero vectors.
     This make the input to have the same length (different document length is standardized).
@@ -202,7 +202,7 @@ def get_sequence_generator(data_path, w2v_model, sequence_length=64):
         for sent in get_text_generator(data_path):
             sent_sequence = [w2v_model[w] for w in sent if w in w2v_model]
             if len(sent_sequence) > 0:
-                yield pad_sequence(np.asarray(sent_sequence), length_limit=sequence_length)
+                yield pad_sequence_with_zeros(np.asarray(sent_sequence), length_limit=sequence_length)
 
 
 def get_batch_sequence_generator(data_path, w2v_model, sequence_length=64, batch_size=32):
@@ -222,6 +222,40 @@ def get_batch_sequence_generator(data_path, w2v_model, sequence_length=64, batch
             complete_batch = np.asarray(batch)
             batch = []
             yield complete_batch, complete_batch
+
+
+def pad_sequence(vector_sequence, pad_vector, sent_length=64):
+    """
+    Padding a sequence with pad vectors.
+
+    :param vector_sequence: np matrix
+    :param pad_vector: np vector
+    :param sent_length: int - length of the sequence
+    :return:
+    """
+    delta = sent_length - vector_sequence.shape[0]
+
+    return np.insert(vector_sequence, [0] * delta, pad_vector, axis=0)
+
+
+def get_preprocessed_data(data_path, w2v_model, sent_length=64):
+    """
+    Reads pre-processed wiki corpus file by line and returns sentence vector representations.
+
+    :param data_path: str - path to the data
+    :param w2v_model: w2v_model
+    :param sent_length: int - length of the sequence
+    :return:
+    """
+    data = []
+    with open(data_path, "r") as f_reader:
+        for line in f_reader.readlines():
+            line = line.strip("\n").split()
+            vector_sequence = np.asarray([w2v_model.wv[word] for word in line if word in w2v_model.wv])
+            vector_sequence = pad_sequence(vector_sequence, w2v_model.wv["<pad>"], sent_length=sent_length)
+            data.append(vector_sequence)
+
+    return np.asarray(data)
 
 
 def vector_sequence_to_words(sequence, w2v_model):
