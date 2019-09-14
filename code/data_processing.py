@@ -120,7 +120,8 @@ def pad_text(word_list, pad=None):
         word_list = word_list[:pad]
     else:
         delta = pad - len(word_list)
-        word_list = ["<pad>"] * min(delta, 5) + word_list  # padding
+        #word_list = ["<pad>"] * min(delta, 5) + word_list  # padding
+        word_list = ["<pad>"] * delta + word_list  # padding
 
     return word_list
 
@@ -149,20 +150,6 @@ def get_text_generator(data_path, sentence_tags=False, pad=False):
                         sent = pad_text(sent, pad=pad)
 
                     yield sent
-
-
-# # TODO: remove @Deprecated
-# def get_word_sequence_generator(data_path):
-#     """
-#     Returns word lists - splits the words.
-#     Wrapper for "get_text_generator".
-#
-#     :param data_path: path to the data
-#     :return: lists of words
-#     """
-#     for sent in get_text_generator(data_path):
-#         logging.debug("From get_word_sequence_generator: %s", sent)
-#         yield sent
 
 
 def pad_sequence_with_zeros(sequence_list, length_limit):

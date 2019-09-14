@@ -37,7 +37,8 @@ config.gpu_options.allow_growth = True
 sess = tf.Session(config=config)
 K.set_session(sess)
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.DEBUG)
 
 
 def main(data_path, model_path):
