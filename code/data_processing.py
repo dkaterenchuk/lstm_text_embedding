@@ -120,7 +120,8 @@ def pad_text(word_list, pad=None):
         word_list = word_list[:pad]
     else:
         delta = pad - len(word_list)
-        word_list = ["<pad>"] * min(delta, 5) + word_list  # padding
+        #word_list = ["<pad>"] * min(delta, 5) + word_list  # padding
+        word_list = ["<pad>"] * delta + word_list  # padding
 
     return word_list
 

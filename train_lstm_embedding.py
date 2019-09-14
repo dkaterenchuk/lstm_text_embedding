@@ -37,7 +37,8 @@ config.gpu_options.allow_growth = True
 sess = tf.Session(config=config)
 K.set_session(sess)
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.DEBUG)
 
 
 def main(data_path, model_path):
@@ -66,13 +67,13 @@ def main(data_path, model_path):
     sequence_data_generator = data_processing.get_sequence_generator(data_path, w2v_model,
                                                                      sequence_length=sequence_length)
 
-    logging.info("Loading the data.")
-    train_data = []
+    # logging.info("Loading the data.")
+    test_data = []
     for i, sent in enumerate(sequence_data_generator):
-        train_data.append(sent)
-        if i == training_sentences:
+        test_data.append(sent)
+        if i == 99: #test_sentences:
             break
-    train_data = np.asarray(train_data)
+    test_data = np.asarray(test_data)
 
     logging.info("Compiling LSTM model.")
     sample_sentence = next(sequence_data_generator)  # used for model initialization
@@ -80,28 +81,28 @@ def main(data_path, model_path):
                                                        lstm_embedding_dim=sentence_embedding_dim)
 
     logging.info("Training the model.")
-    # Example of how to fit a small data set (loading into ram and train)
-    lstm_autoencoder = lstm_embedding_model.train_model(lstm_autoencoder,
-                                                        train_data,
-                                                        model_path=model_path,
-                                                        batch_size=batch_size,
-                                                        epochs=epochs,
-                                                        verbose=verbose)
+    # # Example of how to fit a small data set (loading into ram and train)
+    # lstm_autoencoder = lstm_embedding_model.train_model(lstm_autoencoder,
+    #                                                     train_data,
+    #                                                     model_path=model_path,
+    #                                                     batch_size=batch_size,
+    #                                                     epochs=epochs,
+    #                                                     verbose=verbose)
 
-    # # Train using a generator (when data cannot fit into ram)
-    # data_generator = data_processing.get_batch_sequence_generator(data_path, w2v_model,
-    #                                                               sequence_length=sequence_length,
-    #                                                               batch_size=batch_size)
-    #
-    # lstm_autoencoder = lstm_embedding_model.train_model_on_generator(lstm_autoencoder,
-    #                                                                  data_generator,
-    #                                                                  model_path=model_path,
-    #                                                                  validation_data=(test_data, test_data),
-    #                                                                  steps_per_epoch=steps_per_epoch,
-    #                                                                  epochs=epochs,
-    #                                                                  workers=workers,
-    #                                                                  use_multiprocessing=use_multiprocessing,
-    #                                                                  verbose=verbose)
+    # Train using a generator (when data cannot fit into ram)
+    data_generator = data_processing.get_batch_sequence_generator(data_path, w2v_model,
+                                                                  sequence_length=sequence_length,
+                                                                  batch_size=batch_size)
+    
+    lstm_autoencoder = lstm_embedding_model.train_model_on_generator(lstm_autoencoder,
+                                                                     data_generator,
+                                                                     model_path=model_path,
+                                                                     validation_data=(test_data, test_data),
+                                                                     steps_per_epoch=steps_per_epoch,
+                                                                     epochs=epochs,
+                                                                     workers=workers,
+                                                                     use_multiprocessing=use_multiprocessing,
+                                                                     verbose=verbose)
 
     # Splitting autoencoder into encoder and decoder parts
     encoder, decoder = lstm_embedding_model.split_autoencoder(lstm_autoencoder)
