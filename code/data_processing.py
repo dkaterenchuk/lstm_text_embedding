@@ -234,15 +234,32 @@ def get_preprocessed_data(data_path, w2v_model, sent_length=64):
     :param sent_length: int - length of the sequence
     :return:
     """
-    data = []
-    with open(data_path, "r") as f_reader:
-        for line in f_reader.readlines():
-            line = line.strip("\n").split()
-            vector_sequence = np.asarray([w2v_model.wv[word] for word in line if word in w2v_model.wv])
-            vector_sequence = pad_sequence(vector_sequence, w2v_model.wv["<pad>"], sent_length=sent_length)
-            data.append(vector_sequence)
+    while True:
+        with open(data_path, "r") as f_reader:
+            for line in f_reader.readlines():
+                line = line.strip("\n").split()
+                vector_sequence = np.asarray([w2v_model.wv[word] for word in line if word in w2v_model.wv])
+                vector_sequence = pad_sequence(vector_sequence, w2v_model.wv["<pad>"], sent_length=sent_length)
+                yield vector_sequence
 
-    return np.asarray(data)
+
+def get_batch_preprocessed_data_generator(data_path, w2v_model, sequence_length=64, batch_size=32):
+    """
+    Wrapper for "get_sequence_generator" that adds batches of data.
+
+    :param data_path: str - path to wiki corpus
+    :param w2v_model: obj - trained word embedding model
+    :param sequence_length: int - max sequence length
+    :param batch_size: int - number of instances per batch
+    :return: generator obj - sequences of word integers
+    """
+    batch = []
+    for sent in get_preprocessed_data(data_path, w2v_model, sent_length=sequence_length):
+        batch.append(sent)
+        if len(batch) == batch_size:
+            complete_batch = np.asarray(batch)
+            batch = []
+            yield complete_batch, complete_batch
 
 
 def vector_sequence_to_words(sequence, w2v_model):

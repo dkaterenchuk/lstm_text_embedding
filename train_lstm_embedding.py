@@ -79,40 +79,60 @@ def main(data_path, model_path):
     #         break
     # train_data = np.asarray(train_data)
 
-    train_data = data_processing.get_preprocessed_data(data_path, w2v_model, sent_length=sequence_length)
-    test_data = train_data[:100]
-    train_data = train_data[:100]
-    print(train_data.shape)
+    # train_data = data_processing.get_preprocessed_data(data_path, w2v_model, sent_length=sequence_length)
+    # test_data = train_data[:100]
+    # train_data = train_data[:100]
+    # print(train_data.shape)
+    #
+    # logging.info("Compiling LSTM model.")
+    # sample_sentence = train_data[0]  # used for model initialization
+    # lstm_autoencoder = lstm_embedding_model.get_models(data_sample=sample_sentence,
+    #                                                    lstm_embedding_dim=sentence_embedding_dim)
+    #
+    # logging.info("Training the model.")
+    # # Example of how to fit a small data set (loading into ram and train)
+    # lstm_autoencoder = lstm_embedding_model.train_model(lstm_autoencoder,
+    #                                                     train_data,
+    #                                                     validation_data=test_data,
+    #                                                     model_path=model_path,
+    #                                                     batch_size=batch_size,
+    #                                                     epochs=epochs,
+    #                                                     verbose=verbose)
 
-    logging.info("Compiling LSTM model.")
-    sample_sentence = train_data[0]  # used for model initialization
+    # data_generator = data_processing.get_batch_preprocessed_data_generator(data_path,
+    #                                                                        w2v_model,
+    #                                                                        sequence_length=sequence_length,
+    #                                                                        batch_size=batch_size)
+
+    sent_generator = data_processing.get_preprocessed_data(data_path, w2v_model, sent_length=sequence_length)
+    sample_sentence = next(sent_generator)   # used for model initialization
+    logging.debug("Sample shape: %s", sample_sentence.shape)
     lstm_autoencoder = lstm_embedding_model.get_models(data_sample=sample_sentence,
                                                        lstm_embedding_dim=sentence_embedding_dim)
 
-    logging.info("Training the model.")
-    # Example of how to fit a small data set (loading into ram and train)
-    lstm_autoencoder = lstm_embedding_model.train_model(lstm_autoencoder,
-                                                        train_data,
-                                                        validation_data=test_data,
-                                                        model_path=model_path,
-                                                        batch_size=batch_size,
-                                                        epochs=epochs,
-                                                        verbose=verbose)
+    # Train using a generator (when data cannot fit into ram)
+    data_generator = data_processing.get_batch_preprocessed_data_generator(data_path,
+                                                                           w2v_model,
+                                                                           sequence_length=sequence_length,
+                                                                           batch_size=batch_size)
 
-    # # Train using a generator (when data cannot fit into ram)
-    # data_generator = data_processing.get_batch_sequence_generator(data_path, w2v_model,
-    #                                                               sequence_length=sequence_length,
-    #                                                               batch_size=batch_size)
-    #
-    # lstm_autoencoder = lstm_embedding_model.train_model_on_generator(lstm_autoencoder,
-    #                                                                  data_generator,
-    #                                                                  model_path=model_path,
-    #                                                                  validation_data=(test_data, test_data),
-    #                                                                  steps_per_epoch=steps_per_epoch,
-    #                                                                  epochs=epochs,
-    #                                                                  workers=workers,
-    #                                                                  use_multiprocessing=use_multiprocessing,
-    #                                                                  verbose=verbose)
+    logging.info("Loading the data.")
+    test_data = []
+    for i, sent in enumerate(sent_generator):
+        test_data.append(sent)
+        if i == 1000:
+            break
+    test_data = np.asarray(test_data)
+
+    lstm_autoencoder = lstm_embedding_model.train_model_on_generator(lstm_autoencoder,
+                                                                     data_generator,
+                                                                     model_path=model_path,
+                                                                     validation_data=(test_data, test_data),
+                                                                     steps_per_epoch=steps_per_epoch,
+                                                                     epochs=epochs,
+                                                                     workers=workers,
+                                                                     use_multiprocessing=use_multiprocessing,
+                                                                     verbose=verbose)
 
     # Splitting autoencoder into encoder and decoder parts
     encoder, decoder = lstm_embedding_model.split_autoencoder(lstm_autoencoder)
