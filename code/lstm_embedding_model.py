@@ -102,8 +102,8 @@ def train_model_on_generator(lstm_autoencoder, sequence_generator, model_path, v
     :param verbose: verbose
     :return: trained lstm_model
     """
-    filepath = model_path + "_improvement-{epoch:02d}-{val_loss:.4f}.hdf5"
-    checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=0, save_best_only=True,
+    filepath = model_path + "_improvement-{epoch:02d}-{loss:.5f}.hdf5"
+    checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=0, save_best_only=True,
                                  save_weights_only=False, mode='auto', period=1)
 
     lstm_autoencoder.fit_generator(sequence_generator,

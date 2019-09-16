@@ -53,13 +53,13 @@ def main(data_path, model_path):
     epochs = HYPER_PARAM["epochs"]  # how many times to go over your dataset
     # (batch_size * steps_per_epoch) = whole dataset for the generator
     batch_size = HYPER_PARAM["batch_size"]  # batch size - in generator this is a single step
-    steps_per_epoch = HYPER_PARAM["steps_per_epoch"]  # number of steps defines your entire dataset in generator
     sequence_length = HYPER_PARAM["sequence_length"]  # length of each text - in this case a sentence
     sentence_embedding_dim = HYPER_PARAM["sentence_embedding_dim"]  # size of the latent space
     workers = HYPER_PARAM["workers"]  # cores
     use_multiprocessing = HYPER_PARAM["use_multiprocessing"]  # multiprocessing
     verbose = HYPER_PARAM["verbose"]  # verbose
-    training_sentences = 10**6  # approximate number of data to use
+    training_sentences = 20 # * 10**6  # approximate number of sentences in wiki_small 
+    steps_per_epoch = HYPER_PARAM["steps_per_epoch"]  # number of steps defines your entire dataset in generator    
     
     # Steps to train an LSTM model
     logging.info("Preparing data.")
@@ -104,30 +104,53 @@ def main(data_path, model_path):
     #                                                                        sequence_length=sequence_length,
     #                                                                        batch_size=batch_size)
 
+    logging.info("Compiling a network.")
     sent_generator = data_processing.get_preprocessed_data(data_path, w2v_model, sent_length=sequence_length)
     sample_sentence = next(sent_generator)   # used for model initialization
+
+    # TODO: remove break
+    # sys.exit()
+    
+
     logging.debug("Sample shape: %s", sample_sentence.shape)
     lstm_autoencoder = lstm_embedding_model.get_models(data_sample=sample_sentence,
                                                        lstm_embedding_dim=sentence_embedding_dim)
 
+
+    logging.debug("Creating a data generator")
     # Train using a generator (when data cannot fit into ram)
     data_generator = data_processing.get_batch_preprocessed_data_generator(data_path,
                                                                            w2v_model,
                                                                            sequence_length=sequence_length,
                                                                            batch_size=batch_size)
 
-    logging.info("Loading the data.")
+    logging.info("Loading test data.")
     test_data = []
     for i, sent in enumerate(sent_generator):
         test_data.append(sent)
-        if i == 1000:
+        if i == 100:
             break
+        
     test_data = np.asarray(test_data)
 
+    # train_data = []
+    # for i, sent_batch in enumerate(data_generator):
+    #     train_data.extend(sent_batch)
+    #     if i == 100:
+    #         break
+        
+    # train_data = np.asarray(train_data)
+    # print("trai_data.shape", train_data.shape)
+
+    
+    # TODO: remove break
+    # sys.exit()
+    
+    logging.info("Training the model")
     lstm_autoencoder = lstm_embedding_model.train_model_on_generator(lstm_autoencoder,
                                                                      data_generator,
                                                                      model_path=model_path,
-                                                                     validation_data=(test_data, test_data),
+                                                                     # validation_data=(test_data, test_data),
                                                                      steps_per_epoch=steps_per_epoch,
                                                                      epochs=epochs,
                                                                      workers=workers,
