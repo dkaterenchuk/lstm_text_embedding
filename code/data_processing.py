@@ -224,7 +224,28 @@ def pad_sequence(vector_sequence, pad_vector, sent_length=64):
 
     return np.insert(vector_sequence, [0] * delta, pad_vector, axis=0)
 
-# TODO: remove this
+
+# def get_preprocessed_data(data_path, w2v_model, sent_length=64):
+#     """
+#     Reads pre-processed wiki corpus file by line and returns sentence vector representations.
+#
+#     :param data_path: str - path to the data
+#     :param w2v_model: w2v_model
+#     :param sent_length: int - length of the sequence
+#     :return:
+#     """
+#     print(data_path)
+#     while True:
+#         with open(data_path, "r") as f_reader:
+#             for line in f_reader:
+#                 line = line.strip("\n").split()
+#
+#                 v = [w2v_model.wv[w] for w in line if w in w2v_model.wv]
+#                 vector_sequence = np.asarray(v)
+#                 if vector_sequence.shape[0]:  # empty sentence
+#                     vector_sequence = pad_sequence(vector_sequence, w2v_model.wv["<pad>"], sent_length=sent_length)
+#                     yield vector_sequence
+
 def get_preprocessed_data(data_path, w2v_model, sent_length=64):
     """
     Reads pre-processed wiki corpus file by line and returns sentence vector representations.
@@ -235,41 +256,19 @@ def get_preprocessed_data(data_path, w2v_model, sent_length=64):
     :return:
     """
     print(data_path)
+
+    with open(data_path, "r") as f_reader:
+        text_data = f_reader.readlines()
+
     while True:
-        with open(data_path, "r") as f_reader:
-            for line in f_reader:
-                #line = f_reader.readline()
-                # print(line)
-                line = line.strip("\n").split()
-                # print(line)
+        for line in text_data:
+            line = line.strip("\n").split()
 
-                v = [w2v_model.wv[w] for w in line if w in w2v_model.wv]
-                vector_sequence = np.asarray(v)
-                if vector_sequence.shape[0]:  # empty sentence
-                    vector_sequence = pad_sequence(vector_sequence, w2v_model.wv["<pad>"], sent_length=sent_length)
-                    yield vector_sequence
-
-# def get_preprocessed_data(data_path, w2v_model, sent_length=64):
-#     """
-#     Reads pre-processed wiki corpus file by line and returns sentence vector representations.
-
-#     :param data_path: str - path to the data
-#     :param w2v_model: w2v_model
-#     :param sent_length: int - length of the sequence
-#     :return:
-#     """
-#     print(data_path)
-#     while True:
-#         with open(data_path, "r") as f_reader:
-#             while True:
-#                 for line in f_reader.readline():
-#                     print(line)
-#                     line = line.strip("\n").split()
-                    
-#                     vector_sequence = np.asarray([w2v_model.wv[word] for word in line if word in w2v_model])
-#                     if vector_sequence.shape[0]:  # empty sentence
-#                         vector_sequence = pad_sequence(vector_sequence, w2v_model.wv["<pad>"], sent_length=sent_length)
-#                         yield vector_sequence
+            v = [w2v_model.wv[w] for w in line if w in w2v_model.wv]
+            vector_sequence = np.asarray(v)
+            if vector_sequence.shape[0]:  # empty sentence
+                vector_sequence = pad_sequence(vector_sequence, w2v_model.wv["<pad>"], sent_length=sent_length)
+                yield vector_sequence
 
 
 def get_batch_preprocessed_data_generator(data_path, w2v_model, sequence_length=64, batch_size=32):
