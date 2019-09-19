@@ -246,7 +246,7 @@ def pad_sequence(vector_sequence, pad_vector, sent_length=64):
 #                     vector_sequence = pad_sequence(vector_sequence, w2v_model.wv["<pad>"], sent_length=sent_length)
 #                     yield vector_sequence
 
-def get_preprocessed_data(data_path, w2v_model, sent_length=64):
+def get_preprocessed_data(text_data, w2v_model, sent_length=64):
     """
     Reads pre-processed wiki corpus file by line and returns sentence vector representations.
 
@@ -255,11 +255,6 @@ def get_preprocessed_data(data_path, w2v_model, sent_length=64):
     :param sent_length: int - length of the sequence
     :return:
     """
-    print(data_path)
-
-    with open(data_path, "r") as f_reader:
-        text_data = f_reader.readlines()
-
     while True:
         for line in text_data:
             line = line.strip("\n").split()
@@ -271,7 +266,7 @@ def get_preprocessed_data(data_path, w2v_model, sent_length=64):
                 yield vector_sequence
 
 
-def get_batch_preprocessed_data_generator(data_path, w2v_model, sequence_length=64, batch_size=32):
+def get_batch_preprocessed_data_generator(text_data, w2v_model, sequence_length=64, batch_size=32):
     """
     Wrapper for "get_sequence_generator" that adds batches of data.
 
@@ -282,7 +277,7 @@ def get_batch_preprocessed_data_generator(data_path, w2v_model, sequence_length=
     :return: generator obj - sequences of word integers
     """
     batch = []
-    for sent in get_preprocessed_data(data_path, w2v_model, sent_length=sequence_length):
+    for sent in get_preprocessed_data(text_data, w2v_model, sent_length=sequence_length):
         batch.append(sent)
         if len(batch) == batch_size:
             complete_batch = np.asarray(batch)

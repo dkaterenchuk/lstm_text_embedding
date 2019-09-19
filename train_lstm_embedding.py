@@ -65,6 +65,9 @@ def main(data_path, model_path):
     logging.info("Preparing data.")
     w2v_model = data_processing.get_word_embedding_model(PATHS["fasttext"])
 
+    with open(data_path, "r") as f_reader:
+        text_data = f_reader.readlines()
+
     # This cleans the data on the fly. Time consuming - advised to pre-process the data before-hand.
     # An example of pre-processing is defined in "code/wiki_preprocessing.py"
     #
@@ -105,7 +108,7 @@ def main(data_path, model_path):
     #                                                                        batch_size=batch_size)
 
     logging.info("Compiling a network.")
-    sent_generator = data_processing.get_preprocessed_data(data_path, w2v_model, sent_length=sequence_length)
+    sent_generator = data_processing.get_preprocessed_data(text_data, w2v_model, sent_length=sequence_length)
     sample_sentence = next(sent_generator)   # used for model initialization
 
     # TODO: remove break
@@ -119,7 +122,7 @@ def main(data_path, model_path):
 
     logging.debug("Creating a data generator")
     # Train using a generator (when data cannot fit into ram)
-    data_generator = data_processing.get_batch_preprocessed_data_generator(data_path,
+    data_generator = data_processing.get_batch_preprocessed_data_generator(text_data,
                                                                            w2v_model,
                                                                            sequence_length=sequence_length,
                                                                            batch_size=batch_size)
